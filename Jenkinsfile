@@ -27,8 +27,7 @@ pipeline {
         stage('Deploy') { 
             steps {
                 sh './jenkins/scripts/deliver.sh' 
-                sleep 2
-                sh 'sudo ./jenkins/scripts/kill.sh' 
+                sh './jenkins/scripts/kill.sh' 
             }
         }
     }
