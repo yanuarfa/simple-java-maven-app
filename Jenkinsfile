@@ -28,7 +28,7 @@ pipeline {
             steps {
                 sh './jenkins/scripts/deliver.sh' 
                 sleep 60
-                sh './jenkins/scripts/kill.sh' 
+                sh 'chmod +x ./jenkins/scripts/kill.sh' 
             }
         }
     }
