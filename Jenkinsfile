@@ -1,30 +1,35 @@
-node {
-    try {
+pipeline {
+    agent {
+        docker {
+            image 'maven:3.9.5-eclipse-temurin-17-alpine'
+            args '-v /root/.m2:/root/.m2'
+        }
+    }
+    options {
+        skipStagesAfterUnstable()
+    }
+    stages {
         stage('Build') {
-            def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
+            steps {
                 sh 'mvn -B -DskipTests clean package'
             }
         }
-        
         stage('Test') {
-            try {
-                def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
-                    sh 'mvn test'
-                } 
-            }    
-            finally {
-                junit 'target/surefire-reports/*.xml'
+            steps {
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
             }
         }
-        stage('Deploy') {
-            def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
-                    sh './jenkins/scripts/deliver.sh'
-                    sleep 60
-                    sh './jenkins/scripts/kill.sh'
-            } 
+        stage('Deploy') { 
+            steps {
+                sh './jenkins/scripts/deliver.sh' 
+                sleep 60
+                sh './jenkins/scripts/kill.sh' 
+            }
         }
-    } catch (Exception e) {
-        currentBuild.result = 'FAILURE'
-        throw e
     }
 }
