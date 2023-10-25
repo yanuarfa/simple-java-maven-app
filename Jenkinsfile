@@ -32,8 +32,9 @@ pipeline {
         stage('Deploy') { 
             steps {
                 sh './jenkins/scripts/deliver.sh' 
-                sleep 60
-                sh 'chmod +x ./jenkins/scripts/kill.sh' 
+                sleep 2
+                sh 'ls -l'
+                sh './jenkins/scripts/kill.sh' 
             }
         }
     }
