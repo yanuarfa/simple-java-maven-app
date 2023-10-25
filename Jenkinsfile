@@ -1,41 +1,33 @@
-pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.5-eclipse-temurin-17-alpine'
-            args '-v /root/.m2:/root/.m2'
-        }
-    }
-    options {
-        skipStagesAfterUnstable()
-    }
-    stages {
+node {
+    try {
         stage('Build') {
-            steps {
+            def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
                 sh 'mvn -B -DskipTests clean package'
             }
         }
+        
         stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-        stage('Manual Approval') {
-            steps{
-                input message: 'Lanjutkan ke tahap Deploy?'
+            try {
+                def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
+                    sh 'mvn test'
+                } 
+            }    
+            finally {
+                junit 'target/surefire-reports/*.xml'
             }
         }
-        stage('Deploy') { 
-            steps {
-                sh './jenkins/scripts/deliver.sh' 
-                sleep 2
-                sh 'ls -l'
-                sh './jenkins/scripts/kill.sh' 
-            }
+        stage('Manual Approval'){
+            input 'Lanjutkan ke tahap Deploy?'
         }
+        stage('Deploy') {
+            def mavenImage = docker.image('maven:3.9.4-eclipse-temurin-17-alpine').inside("-v /root/.m2:/root/.m2") {
+                    sh './jenkins/scripts/deliver.sh'
+                    sleep 2
+                    sh 'chmod +x ./jenkins/scripts/kill.sh'
+            } 
+        }
+    } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+        throw e
     }
 }
